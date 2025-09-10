@@ -1,0 +1,27 @@
+# Docker Compose configuration for SMTP Sandbox Server
+version: '3.8'
+
+services:
+  smtp-sandbox:
+    build: .
+    container_name: smtp-sandbox
+    ports:
+      - "3000:3000"   # Web interface
+      - "2525:2525"   # SMTP server
+    volumes:
+      - smtp_data:/app/data  # Persist database
+    environment:
+      - WEB_PORT=3000
+      - SMTP_PORT=2525
+      - DB_PATH=/app/data/emails.db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  smtp_data:
+    driver: local

@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMTP Sandbox - Email Viewer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .main-container {
+            height: calc(100vh - 120px);
+            overflow: hidden;
+        }
+
+        .email-list-panel {
+            height: 100%;
+            border-right: 1px solid #dee2e6;
+            background: white;
+            overflow-y: auto;
+        }
+
+        .email-preview-panel {
+            height: 100%;
+            background: white;
+            overflow: hidden;
+            border-left: 1px solid #e9ecef;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .email-preview-content {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .email-header-section {
+            background: #ffffff;
+            border-bottom: 2px solid #f8f9fa;
+            padding: 1.5rem;
+            flex-shrink: 0;
+            width: 100%;
+        }
+
+        .email-subject-line {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 1rem;
+            line-height: 1.3;
+            word-wrap: break-word;
+            width: 100%;
+        }
+
+        .email-meta-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            width: 100%;
+        }
+
+        .email-meta-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            padding: 0.25rem 0;
+        }
+
+        .email-meta-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .email-meta-label {
+            font-weight: 600;
+            color: #495057;
+            min-width: 80px;
+            flex-shrink: 0;
+            font-size: 0.875rem;
+        }
+
+        .email-meta-value {
+            color: #6c757d;
+            font-size: 0.875rem;
+            word-break: break-all;
+            line-height: 1.4;
+        }
+
+        .email-content-section {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            min-height: 0;
+        }
+
+        .email-item {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f1f3f4;
+            padding: 1rem;
+        }
+
+        .email-item:hover {
+            background-color: #f8f9fa;
+            transform: translateX(2px);
+        }
+
+        .email-item.active {
+            background-color: #e3f2fd;
+            border-left: 4px solid #667eea;
+            transform: translateX(0);
+        }
+
+        .email-item:last-child {
+            border-bottom: none;
+        }
+
+        .email-subject {
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+            font-size: 0.95rem;
+        }
+
+        .email-from {
+            color: #667eea;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .email-preview {
+            color: #8e979e;
+            font-size: 0.75rem;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 0.75rem;
+        }
+
+        .email-time {
+            color: #adb5bd;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .email-actions {
+            opacity: 1;
+            transition: opacity 0.2s ease;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: #28a745;
+        }
+
+        .status-offline {
+            background: #dc3545;
+        }
+
+        .content-tabs {
+            border-bottom: 1px solid #dee2e6;
+            background: #ffffff;
+            flex-shrink: 0;
+        }
+
+        .content-tabs .nav-link {
+            border: none;
+            border-radius: 0;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 0.75rem 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .content-tabs .nav-link:hover {
+            color: #495057;
+            background-color: #f8f9fa;
+        }
+
+        .content-tabs .nav-link.active {
+            color: #667eea;
+            background-color: white;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .tab-content {
+            flex: 1;
+            overflow: hidden;
+            width: 100%;
+            min-height: 0;
+        }
+
+        .content-pane {
+            display: none;
+            height: 100%;
+            width: 100%;
+            overflow-y: auto;
+        }
+
+        .content-pane.active {
+            display: block;
+        }
+
+        .content-pane-inner {
+            padding: 1.5rem;
+            min-height: 100%;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .content-pane pre {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            color: #495057;
+        }
+
+        .content-pane iframe {
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #6c757d;
+        }
+
+        .empty-preview {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+            text-align: center;
+            color: #6c757d;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        }
+
+        .empty-preview-content {
+            padding: 3rem;
+            max-width: 400px;
+        }
+
+        .empty-preview-icon {
+            font-size: 4rem;
+            color: #dee2e6;
+            margin-bottom: 1rem;
+        }
+
+        .empty-preview h5 {
+            color: #6c757d;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-preview p {
+            color: #8e979e;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .controls-panel {
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            padding: 0.75rem 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                height: auto;
+            }
+            
+            .email-list-panel {
+                border-right: none;
+                border-bottom: 1px solid #dee2e6;
+                height: 300px;
+            }
+            
+            .email-preview-panel {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container-fluid">
+            <div class="text-center">
+                <h1 class="h3 mb-2"><i class="bi bi-envelope"></i> SMTP Sandbox</h1>
+                <p class="mb-1">Development Email Testing Server</p>
+                <p class="mb-0">
+                    <span id="connectionStatus" class="status-indicator status-offline"></span>
+                    <span id="connectionText">Connecting...</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid p-0">
+        <div class="controls-panel">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <span class="text-muted">
+                        Total Emails: <span class="fw-bold text-primary" id="emailCount">0</span>
+                        <span id="loadingIndicator" class="text-muted ms-2" style="display: none;">
+                            <i class="bi bi-arrow-clockwise"></i> Loading...
+                        </span>
+                    </span>
+                </div>
+                <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                    <button class="btn btn-outline-primary btn-sm me-2" onclick="refreshEmails()">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm me-2" onclick="loadMoreEmails()" id="loadMoreBtn" style="display: none;">
+                        <i class="bi bi-file-earmark-plus"></i> Load More
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="clearAllEmails()">
+                        <i class="bi bi-trash"></i> Clear All
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-0 main-container">
+            <!-- Email List Panel -->
+            <div class="col-md-4 email-list-panel">
+                <div id="emailList">
+                    <div class="empty-state">
+                        <i class="bi bi-mailbox2 display-4 text-muted mb-3"></i>
+                        <h5 class="text-muted">No emails yet</h5>
+                        <p class="small">Send an email to <strong>localhost:2525</strong> to see it appear here</p>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <strong>Configuration:</strong><br>
+                                Host: localhost | Port: 2525 | Security: None
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Preview Panel -->
+            <div class="col-md-8 email-preview-panel">
+                <div id="emailPreview" style="height: 100%; width: 100%;">
+                    <div class="empty-preview">
+                        <div class="empty-preview-content">
+                            <i class="bi bi-envelope-open empty-preview-icon"></i>
+                            <h5>Select an email to preview</h5>
+                            <p>Click on an email from the list to view its contents, headers, and attachments</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Socket.io connection
+        const socket = io();
+        let emails = [];
+        let selectedEmailId = null;
+
+        // Connection status
+        socket.on('connect', () => {
+            updateConnectionStatus(true);
+            loadEmails();
+        });
+
+        socket.on('disconnect', () => {
+            updateConnectionStatus(false);
+        });
+
+        // Real-time email updates
+        socket.on('newEmail', (email) => {
+            emails.unshift(email);
+            // Update total count in pagination if available
+            if (window.emailPagination) {
+                window.emailPagination.total += 1;
+            }
+            updateEmailList();
+            updateEmailCount();
+        });
+
+        socket.on('emailDeleted', (emailId) => {
+            emails = emails.filter(e => e.id !== emailId);
+            // If this was the selected email, clear preview
+            if (selectedEmailId == emailId) {
+                showEmptyPreview();
+                selectedEmailId = null;
+            }
+            // Update total count in pagination if available
+            if (window.emailPagination) {
+                window.emailPagination.total = Math.max(0, window.emailPagination.total - 1);
+            }
+            updateEmailList();
+            updateEmailCount();
+        });
+
+        socket.on('emailsCleared', () => {
+            emails = [];
+            selectedEmailId = null;
+            showEmptyPreview();
+            // Reset pagination
+            window.emailPagination = { total: 0, hasMore: false };
+            updateEmailList();
+            updateEmailCount();
+        });
+
+        function updateConnectionStatus(connected) {
+            const statusIndicator = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('connectionText');
+            
+            if (connected) {
+                statusIndicator.className = 'status-indicator status-online';
+                statusText.textContent = 'Connected';
+            } else {
+                statusIndicator.className = 'status-indicator status-offline';
+                statusText.textContent = 'Disconnected';
+            }
+        }
+
+        async function loadEmails(limit = 10, offset = 0) {
+            try {
+                const response = await fetch(`/api/emails?limit=${limit}&offset=${offset}`);
+                const data = await response.json();
+                
+                if (offset === 0) {
+                    // First load or refresh - replace all emails
+                    emails = data.emails || [];
+                } else {
+                    // Loading more - append to existing emails
+                    emails = [...emails, ...(data.emails || [])];
+                }
+                
+                // Store pagination info for potential "load more" functionality
+                window.emailPagination = data.pagination;
+                
+                updateEmailList();
+                updateEmailCount();
+            } catch (error) {
+                console.error('Error loading emails:', error);
+                // Fallback for backward compatibility
+                emails = [];
+                updateEmailList();
+                updateEmailCount();
+            }
+        }
+
+        function updateEmailList() {
+            const emailList = document.getElementById('emailList');
+            
+            if (emails.length === 0) {
+                emailList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-mailbox2 display-4 text-muted mb-3"></i>
+                        <h5 class="text-muted">No emails yet</h5>
+                        <p class="small">Send an email to <strong>localhost:2525</strong> to see it appear here</p>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <strong>Configuration:</strong><br>
+                                Host: localhost | Port: 2525 | Security: None
+                            </small>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('loadMoreBtn').style.display = 'none';
+                return;
+            }
+
+            emailList.innerHTML = emails.map(email => `
+                <div class="email-item p-2 ${selectedEmailId == email.id ? 'active' : ''}" onclick="selectEmail(${email.id})">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div class="email-from text-truncate me-2" style="font-size: 0.75rem; font-weight: 600; color: #667eea;">${escapeHtml(email.from || email.from_address || 'Unknown')}</div>
+                        <small class="email-time text-nowrap" style="font-size: 0.65rem;">${formatTime(email.timestamp || email.created_at)}</small>
+                    </div>
+                    <div class="email-subject text-truncate mb-1" style="font-size: 0.8rem; font-weight: 500;">${escapeHtml(email.subject || 'No Subject')}</div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="email-preview text-truncate flex-grow-1 me-2" style="font-size: 0.7rem; color: #8e979e;">${escapeHtml((email.text || email.text_content || '').substring(0, 40))}${(email.text || email.text_content || '').length > 40 ? '...' : ''}</div>
+                        <div class="email-actions d-flex">
+                            <button class="btn btn-outline-primary btn-sm me-1" style="padding: 0.125rem 0.25rem; font-size: 0.7rem;" onclick="event.stopPropagation(); selectEmail(${email.id})" title="View">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm" style="padding: 0.125rem 0.25rem; font-size: 0.7rem;" onclick="event.stopPropagation(); deleteEmail(${email.id})" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Show/hide load more button based on pagination
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            if (window.emailPagination && window.emailPagination.hasMore) {
+                loadMoreBtn.style.display = 'inline-block';
+            } else {
+                loadMoreBtn.style.display = 'none';
+            }
+        }
+
+        function updateEmailCount() {
+            const count = window.emailPagination ? window.emailPagination.total : emails.length;
+            document.getElementById('emailCount').textContent = count;
+        }
+
+        async function selectEmail(emailId) {
+            selectedEmailId = emailId;
+            
+            // Update active state in email list
+            document.querySelectorAll('.email-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.currentTarget?.classList.add('active');
+            
+            try {
+                const response = await fetch(`/api/emails/${emailId}`);
+                const email = await response.json();
+                showEmailPreview(email);
+            } catch (error) {
+                console.error('Error loading email:', error);
+                showErrorPreview();
+            }
+        }
+
+        function showEmailPreview(email) {
+            const preview = document.getElementById('emailPreview');
+            
+            // Handle both old and new API response formats
+            const textContent = email.text || email.text_content || '';
+            const htmlContent = email.html || email.html_content || '';
+            const rawContent = email.raw || email.raw_content || '';
+            const headers = email.headers || {};
+            const attachments = email.attachments || [];
+            
+            preview.innerHTML = `
+                <div class="email-preview-content">
+                    <div class="email-header-section">
+                        <h1 class="email-subject-line">${escapeHtml(email.subject || 'No Subject')}</h1>
+                        <div class="email-meta-info">
+                            <div class="email-meta-row">
+                                <div class="email-meta-label">
+                                    <i class="bi bi-person-fill me-1"></i>From:
+                                </div>
+                                <div class="email-meta-value">${escapeHtml(email.from || email.from_address || 'Unknown')}</div>
+                            </div>
+                            <div class="email-meta-row">
+                                <div class="email-meta-label">
+                                    <i class="bi bi-envelope-fill me-1"></i>To:
+                                </div>
+                                <div class="email-meta-value">${escapeHtml(email.to || email.to_address || 'Unknown')}</div>
+                            </div>
+                            <div class="email-meta-row">
+                                <div class="email-meta-label">
+                                    <i class="bi bi-clock-fill me-1"></i>Date:
+                                </div>
+                                <div class="email-meta-value">${formatDateTime(email.timestamp || email.created_at)}</div>
+                            </div>
+                            ${attachments.length > 0 ? `
+                            <div class="email-meta-row">
+                                <div class="email-meta-label">
+                                    <i class="bi bi-paperclip me-1"></i>Files:
+                                </div>
+                                <div class="email-meta-value">${attachments.length} attachment(s)</div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="email-content-section">
+                        <ul class="nav nav-tabs content-tabs" id="contentTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-pane" type="button" role="tab">
+                                    <i class="bi bi-file-text me-1"></i>Text
+                                </button>
+                            </li>
+                            ${htmlContent ? `
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="html-tab" data-bs-toggle="tab" data-bs-target="#html-pane" type="button" role="tab">
+                                    <i class="bi bi-code-slash me-1"></i>HTML
+                                </button>
+                            </li>
+                            ` : ''}
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="headers-tab" data-bs-toggle="tab" data-bs-target="#headers-pane" type="button" role="tab">
+                                    <i class="bi bi-list-ul me-1"></i>Headers
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="raw-tab" data-bs-toggle="tab" data-bs-target="#raw-pane" type="button" role="tab">
+                                    <i class="bi bi-file-code me-1"></i>Raw
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="contentTabsContent">
+                            <div class="tab-pane fade show active content-pane" id="text-pane" role="tabpanel">
+                                <div class="content-pane-inner">
+                                    ${textContent ? `<pre>${escapeHtml(textContent)}</pre>` : '<div class="text-muted text-center py-4"><i class="bi bi-file-text display-4 mb-2"></i><br>No text content available</div>'}
+                                </div>
+                            </div>
+                            
+                            ${htmlContent ? `
+                            <div class="tab-pane fade content-pane" id="html-pane" role="tabpanel">
+                                <div class="content-pane-inner">
+                                    <iframe srcdoc="${escapeHtml(htmlContent)}" class="w-100" style="height: 500px; min-height: 400px;"></iframe>
+                                </div>
+                            </div>
+                            ` : ''}
+                            
+                            <div class="tab-pane fade content-pane" id="headers-pane" role="tabpanel">
+                                <div class="content-pane-inner">
+                                    <pre>${escapeHtml(JSON.stringify(headers, null, 2))}</pre>
+                                </div>
+                            </div>
+                            
+                            <div class="tab-pane fade content-pane" id="raw-pane" role="tabpanel">
+                                <div class="content-pane-inner">
+                                    <pre>${escapeHtml(rawContent || JSON.stringify(email, null, 2))}</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showEmptyPreview() {
+            const preview = document.getElementById('emailPreview');
+            preview.innerHTML = `
+                <div class="empty-preview">
+                    <div class="empty-preview-content">
+                        <i class="bi bi-envelope-open empty-preview-icon"></i>
+                        <h5>Select an email to preview</h5>
+                        <p>Click on an email from the list to view its contents, headers, and attachments</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showErrorPreview() {
+            const preview = document.getElementById('emailPreview');
+            preview.innerHTML = `
+                <div class="empty-preview">
+                    <div class="empty-preview-content">
+                        <i class="bi bi-exclamation-triangle empty-preview-icon text-warning"></i>
+                        <h5>Error loading email</h5>
+                        <p>There was an error loading the email content. Please try refreshing the page.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function deleteEmail(emailId) {
+            if (confirm('Are you sure you want to delete this email?')) {
+                try {
+                    await fetch(`/api/emails/${emailId}`, { method: 'DELETE' });
+                } catch (error) {
+                    console.error('Error deleting email:', error);
+                }
+            }
+        }
+
+        async function clearAllEmails() {
+            if (confirm('Are you sure you want to delete all emails?')) {
+                try {
+                    await fetch('/api/emails', { method: 'DELETE' });
+                } catch (error) {
+                    console.error('Error clearing emails:', error);
+                }
+            }
+        }
+
+        function refreshEmails() {
+            selectedEmailId = null;
+            showEmptyPreview();
+            loadEmails();
+        }
+
+        async function loadMoreEmails() {
+            if (!window.emailPagination || !window.emailPagination.hasMore) {
+                return;
+            }
+            
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            
+            loadingIndicator.style.display = 'inline';
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Loading...';
+            
+            try {
+                const currentOffset = window.emailPagination.offset + window.emailPagination.limit;
+                await loadEmails(10, currentOffset);
+            } catch (error) {
+                console.error('Error loading more emails:', error);
+            } finally {
+                loadingIndicator.style.display = 'none';
+                loadMoreBtn.disabled = false;
+                loadMoreBtn.innerHTML = '<i class="bi bi-file-earmark-plus"></i> Load More';
+            }
+        }
+
+        function formatTime(timestamp) {
+            return new Date(timestamp).toLocaleTimeString();
+        }
+
+        function formatDateTime(timestamp) {
+            return new Date(timestamp).toLocaleString();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initial load
+        updateConnectionStatus(false);
+    </script>
+</body>
+</html>
