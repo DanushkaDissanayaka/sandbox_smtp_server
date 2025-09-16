@@ -8,7 +8,7 @@ A development SMTP server that captures incoming emails and displays them in a w
 - 🌐 **Web Interface**: View emails in a modern web browser interface
 - 🔄 **Real-time Updates**: New emails appear instantly using WebSocket
 - 📱 **Responsive Design**: Works on desktop and mobile devices
-- �️ **PostgreSQL Storage**: Persistent email storage with database support
+- �️ **sqlite3 Storage**: Persistent email storage with database support
 - 🧹 **Easy Management**: Delete individual emails or clear all at once
 - 📋 **Multiple Formats**: View emails as text, HTML, or raw data
 - 🔍 **Pagination**: Efficient handling of large email volumes

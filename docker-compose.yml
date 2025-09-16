@@ -6,17 +6,17 @@ services:
     build: .
     container_name: smtp-sandbox
     ports:
-      - "3000:3000"   # Web interface
+      - "3001:3001"   # Web interface
       - "2525:2525"   # SMTP server
     volumes:
       - smtp_data:/app/data  # Persist database
     environment:
-      - WEB_PORT=3000
+      - WEB_PORT=3001
       - SMTP_PORT=2525
       - DB_PATH=/app/data/emails.db
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001"]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -161,7 +161,9 @@ const smtpServer = new SMTPServer({
     authOptional: true,
     banner: 'SMTP Sandbox Server - Development Only',
     size: 1024 * 1024 * 10, // 10MB max
-    logger: false
+    logger: false,
+    disabledCommands: ['STARTTLS'],
+    hideSTARTTLS: true
 });
 
 // Error handling for SMTP server
@@ -190,8 +192,9 @@ async function startServers() {
             console.log(`📋 Configure your email client with:`);
             console.log(`   - Host: localhost`);
             console.log(`   - Port: ${SMTP_PORT}`);
-            console.log(`   - Security: None (no SSL/TLS)`);
+            console.log(`   - Security: None (no SSL/TLS/STARTTLS)`);
             console.log(`   - Authentication: Any username/password`);
+            console.log(`   - Encryption: Disabled (Plain text only)`);
         });
     } catch (error) {
         console.error('Failed to start servers:', error);
